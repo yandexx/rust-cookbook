@@ -9,6 +9,7 @@
 | [Generate random numbers with normal distribution][ex-rand-dist] | [![rand-badge]][rand] | [![cat-science-badge]][cat-science] |
 | [Generate random values of a custom type][ex-rand-custom] | [![rand-badge]][rand] | [![cat-science-badge]][cat-science] |
 | [Run an external command and process stdout][ex-parse-subprocess-output] | [![regex-badge]][regex] | [![cat-os-badge]][cat-os] [![cat-text-processing-badge]][cat-text-processing] |
+| [Filter a log file by matching multiple regular expressions][ex-regex-filter-log] | [![regex-badge]][regex] | [![cat-text-processing-badge]][cat-text-processing]
 | [Declare lazily evaluated constant][ex-lazy-constant] | [![lazy_static-badge]][lazy_static] | [![cat-caching-badge]][cat-caching] [![cat-rust-patterns-badge]][cat-rust-patterns] |
 | [Maintain global mutable state][ex-global-mut-state] | [![lazy_static-badge]][lazy_static] | [![cat-rust-patterns-badge]][cat-rust-patterns] |
 | [Access a file randomly using a memory map][ex-random-file-access] | [![memmap-badge]][memmap] | [![cat-filesystem-badge]][cat-filesystem] |
@@ -270,6 +271,54 @@ fn run() -> Result<()> {
 # quick_main!(run);
 ```
 
+[ex-regex-filter-log]: #ex-regex-filter-log
+<a name="ex-regex-filter-log"></a>
+## Filter a log file by matching multiple regular expressions
+
+[![regex-badge]][regex] [![cat-text-processing-badge]][cat-text-processing]
+
+Reads a file named `application.log` and only outputs the lines 
+containing “warning” or “error” (case insensitive). A [`regex::RegexSet`] is built
+with [`regex::RegexSetBuilder`] using the builder pattern.
+
+```rust
+# #[macro_use]
+# extern crate error_chain;
+extern crate regex;
+
+# use std::fs::File;
+# use std::io::{BufReader, BufRead};
+# 
+use regex::RegexSetBuilder;
+
+# error_chain! {
+#     foreign_links {
+#         Io(std::io::Error);
+#         Regex(regex::Error);
+#     }
+# }
+#
+fn run() -> Result<()> {
+    let log_path = "application.log";
+    let log_file = File::open(log_path)?;
+    let buffered = BufReader::new(log_file);
+
+    let set = RegexSetBuilder::new(&[r"warning", r"error"])
+                .case_insensitive(true)
+                .build()?;
+
+    for line in buffered.lines() {
+        let line = line?;
+        if set.is_match(line.as_str()) {
+            println!("{}", line);
+        }
+    }
+    Ok(())
+}
+# 
+# quick_main!(run);
+```
+
 [ex-lazy-constant]: #ex-lazy-constant
 <a name="ex-lazy-constant"></a>
 ## Declare lazily evaluated constant
@@ -523,6 +572,8 @@ fn main() {
 [`Rng::gen_range`]: https://doc.rust-lang.org/rand/rand/trait.Rng.html#method.gen_range
 [`rand::Rand`]: https://doc.rust-lang.org/rand/rand/trait.Rand.html
 [`Regex`]: https://doc.rust-lang.org/regex/regex/struct.Regex.html
+[`regex::RegexSet`]: https://doc.rust-lang.org/regex/regex/struct.RegexSet.html
+[`regex::RegexSetBuilder`]: https://doc.rust-lang.org/regex/regex/struct.RegexSetBuilder.html
 [`Output`]: https://doc.rust-lang.org/std/process/struct.Output.html
 [`Command`]: https://doc.rust-lang.org/std/process/struct.Command.html
 [`HashMap`]: https://doc.rust-lang.org/std/collections/struct.HashMap.html
